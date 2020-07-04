@@ -1,1 +1,0 @@
-{"version":3,"file":"bundle.js","sources":["../src/index.ts"],"sourcesContent":["let a: number = 3;\n\nalert(a);"],"names":[],"mappings":";;;CAAA,IAAI,CAAC,GAAW,CAAC,CAAC;CAElB,KAAK,CAAC,CAAC,CAAC;;;;"}

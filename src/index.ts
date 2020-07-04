@@ -1,3 +1,8 @@
-let a: number = 3;
+import { Engine } from 'excalibur';
 
-alert(a);
+let game = new Engine({
+    width: 800,
+    height: 600,
+});
+
+game.start();
