@@ -1,5 +1,11 @@
 import { Scene, Texture, SpriteSheet, TileMap, Engine, Loader, TileSprite, Random } from "excalibur";
 import PlayerActor from "../actors/PlayerActor";
+import WeighedRandom from "../utils/WeighedRandom";
+
+const GROUND_W = new WeighedRandom<number>();
+GROUND_W.add(0, 100);
+GROUND_W.add(1, 3);
+GROUND_W.add(2, 1);
 
 export default class GameplayScene extends Scene {
     private readonly groundTex = new Texture('assets/tex/ground.png');
@@ -11,6 +17,8 @@ export default class GameplayScene extends Scene {
 
     private readonly tilemap = new TileMap(0, 0, 24, 24, 100, 100);
     private readonly player = new PlayerActor();
+
+    private readonly groundRnd = new Random();
 
     onInitialize(engine: Engine) {
         const loader = new Loader([
@@ -24,23 +32,13 @@ export default class GameplayScene extends Scene {
     }
 
     onLoaded() {
-        const groundRnd = new Random(1999);
-
         this.tilemap.registerSpriteSheet('ground', this.groundSheet);
         this.tilemap.registerSpriteSheet('traps', this.trapsSheet);
 
         for(var i = 0; i < this.tilemap.data.length; ++i) {
             const cell = this.tilemap.getCellByIndex(i);
 
-            // Randomize ground tiles for fancy looks
-            var tileID = 0;
-            var random = groundRnd.floating(0, 1);
-            if(random < 0.01) {
-                tileID = 1;
-            } else if(random > 0.994) {
-                tileID = 2;
-            }
-            cell.pushSprite(new TileSprite('ground', tileID));
+            cell.pushSprite(new TileSprite('ground', GROUND_W.randomize(this.groundRnd)));
         }
         
         this.addTileMap(this.tilemap);
