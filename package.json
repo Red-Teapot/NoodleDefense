@@ -1,0 +1,9 @@
+{
+  "name": "noodle_defense",
+  "version": "0.0.1",
+  "description": "A game about defending the Earth from Giant Mecharoaches using traps & noodle",
+  "main": "index.ts",
+  "author": "RedTeapot",
+  "license": "MIT",
+  "private": true
+}
