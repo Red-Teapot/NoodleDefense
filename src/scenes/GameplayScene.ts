@@ -1,29 +1,25 @@
-import { Scene, Texture, SpriteSheet, TileMap, Engine, Loader, TileSprite, Random } from "excalibur";
+import { Scene, Texture, SpriteSheet, Engine, Loader } from "excalibur";
 import PlayerActor from "../actors/PlayerActor";
-import WeighedRandom from "../utils/WeighedRandom";
-
-const GROUND_W = new WeighedRandom<number>();
-GROUND_W.add(0, 100);
-GROUND_W.add(1, 3);
-GROUND_W.add(2, 1);
+import Map from "../world/Map";
 
 export default class GameplayScene extends Scene {
     private readonly groundTex = new Texture('assets/tex/ground.png');
     private readonly trapsTex = new Texture('assets/tex/traps.png');
+    private readonly noodleTex = new Texture('assets/tex/noodle.png');
     private readonly playerTex = new Texture('assets/tex/player.png');
 
     private readonly groundSheet = new SpriteSheet(this.groundTex, 5, 5, 24, 24);
     private readonly trapsSheet = new SpriteSheet(this.trapsTex, 5, 5, 24, 24);
+    private readonly noodleSheet = new SpriteSheet(this.noodleTex, 5, 5, 24, 24);
 
-    private readonly tilemap = new TileMap(0, 0, 24, 24, 100, 100);
-    private readonly player = new PlayerActor();
-
-    private readonly groundRnd = new Random();
+    private readonly map = new Map();
+    private readonly player = new PlayerActor(this.map);
 
     onInitialize(engine: Engine) {
         const loader = new Loader([
             this.groundTex,
             this.trapsTex,
+            this.noodleTex,
             this.playerTex,
         ]);
         loader.logo = '';
@@ -32,26 +28,21 @@ export default class GameplayScene extends Scene {
     }
 
     onLoaded() {
-        this.tilemap.registerSpriteSheet('ground', this.groundSheet);
-        this.tilemap.registerSpriteSheet('traps', this.trapsSheet);
-
-        for(var i = 0; i < this.tilemap.data.length; ++i) {
-            const cell = this.tilemap.getCellByIndex(i);
-
-            cell.pushSprite(new TileSprite('ground', GROUND_W.randomize(this.groundRnd)));
-        }
+        this.map.tilemap.registerSpriteSheet('ground', this.groundSheet);
+        this.map.tilemap.registerSpriteSheet('traps', this.trapsSheet);
+        this.map.tilemap.registerSpriteSheet('noodle', this.noodleSheet);
         
-        this.addTileMap(this.tilemap);
+        this.addTileMap(this.map.tilemap);
 
-        const centerX = this.tilemap.cols * this.tilemap.cellWidth / 2;
-        const centerY = this.tilemap.rows * this.tilemap.cellHeight / 2;
+        const mapCenter = this.map.center;
 
-        this.camera.pos.setTo(centerX, centerY - 100);
+        this.camera.pos = mapCenter;
+        this.camera.pos.y -= 100;
         this.camera.zoom(2);
         this.camera.strategy.elasticToActor(this.player, 0.07, 0.001);
 
         this.player.addDrawing(this.playerTex);
-        this.player.pos.setTo(centerX, centerY);
+        this.player.pos = mapCenter;
         this.add(this.player);
     }
 }

@@ -1,10 +1,15 @@
 import { Actor, Engine, Input, Vector } from "excalibur";
+import Map from "../world/Map";
 
 const SPEED = 24 * 7;
 
 export default class PlayerActor extends Actor {
-    constructor() {
+    private readonly map: Map;
+
+    constructor(map: Map) {
         super(0, 0, 24, 24);
+
+        this.map = map;
     }
 
     update(engine: Engine, delta: number) {
@@ -25,6 +30,10 @@ export default class PlayerActor extends Actor {
         
         if(this.vel.x != 0 || this.vel.y != 0) {
             this.vel = this.vel.normalize().scale(SPEED);
+        }
+
+        if(engine.input.keyboard.isHeld(Input.Keys.Space)) {
+            this.map.placeNoodle(this.pos, this.vel);
         }
 
         super.update(engine, delta);

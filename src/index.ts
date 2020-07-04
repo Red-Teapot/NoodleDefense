@@ -1,4 +1,4 @@
-import { Engine, DisplayMode } from 'excalibur';
+import { Engine, DisplayMode, Physics, CollisionResolutionStrategy } from 'excalibur';
 import GameplayScene from './scenes/GameplayScene';
 
 const engine = new Engine({
