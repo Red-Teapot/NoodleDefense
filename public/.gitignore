@@ -1,4 +1,1 @@
-*
-!assets
-!index.html
-!.gitignore
+bundle.*
