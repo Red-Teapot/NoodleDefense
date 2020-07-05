@@ -1,7 +1,9 @@
-import { Actor } from "excalibur";
+import { Actor, Random } from "excalibur";
 import Map, { MapCell } from "../world/Map";
 
 const SPEED = 30;
+
+const noodleRnd = new Random();
 
 export default class MecharoachActor extends Actor {
     private readonly map: Map;
@@ -27,6 +29,10 @@ export default class MecharoachActor extends Actor {
             this.actions.moveTo(target.x, target.y, SPEED)
                 .callMethod(() => this.eatNoodle(cell));
         }
+
+        if(this.vel.x != 0 || this.vel.y != 0) {
+            this.rotation = this.vel.toAngle();
+        }
     }
 
     eatNoodle(cell: MapCell) {
@@ -35,10 +41,20 @@ export default class MecharoachActor extends Actor {
             this.moveToTarget();
         }
 
+        const next = this.map.getNextNoodle(cell);
+
         cell.clearNoodle();
 
-        // TODO Follow noodle chain
-        this.actions.die();
+        if(next.length == 0) {
+            this.isEating = false;
+            this.moveToTarget();
+        } else {
+            // TODO Maybe select closest to the goal direction
+            const targetCell = noodleRnd.pickOne(next);
+            const target = targetCell.center;
+            this.actions.moveTo(target.x, target.y, SPEED)
+                .callMethod(() => this.eatNoodle(targetCell));
+        }
     }
 
     moveToTarget() {

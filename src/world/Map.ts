@@ -14,6 +14,21 @@ enum Direction {
     Left,
     Right,
 }
+
+// Well, Java-style enums with member functions would be nice here
+function opposite(dir: Direction): Direction {
+    switch(dir) {
+        case Direction.Up:
+            return Direction.Down;
+        case Direction.Down:
+            return Direction.Up;
+        case Direction.Left:
+            return Direction.Right;
+        case Direction.Right:
+            return Direction.Left;
+    }
+}
+
 enum NoodleSpriteIDs {
     Horizontal = 0,
     Vertical = 1,
@@ -29,6 +44,13 @@ const DIR_BY_ANGLE = [
     Direction.Down,
     Direction.Left,
 ];
+
+const OFFSET_BY_DIR = {
+    [Direction.Up]: new Vector(0, -1),
+    [Direction.Down]: new Vector(0, 1),
+    [Direction.Left]: new Vector(-1, 0),
+    [Direction.Right]: new Vector(1, 0),
+};
 
 const NOODLE_SPRITE_BY_DIRS = {
     [Direction.Up]: {
@@ -100,12 +122,24 @@ export class MapCell extends Cell {
         this.update();
     }
 
+    isNoodleConnected(that: MapCell): boolean {
+        return this.hasNoodle && that.hasNoodle &&
+            (this.noodleInDir == that.noodleOutDir 
+                || this.noodleOutDir == that.noodleInDir
+                || this.noodleInDir == opposite(that.noodleInDir!)
+                || this.noodleOutDir == opposite(that.noodleOutDir!));
+    }
+
     get hasNoodle(): boolean {
         return this._noodleInDir != undefined || this._noodleOutDir != undefined;
     }
 
     get noodleInDir(): Direction | undefined {
-        return this._noodleInDir;
+        if(this._noodleInDir == undefined) {
+            return this._noodleOutDir;
+        } else {
+            return this._noodleInDir;
+        }
     }
     set noodleInDir(dir: Direction | undefined) {
         this._noodleInDir = dir;
@@ -113,11 +147,22 @@ export class MapCell extends Cell {
     }
 
     get noodleOutDir(): Direction | undefined {
-        return this._noodleOutDir;
+        if(this._noodleOutDir == undefined) {
+            return this._noodleInDir;
+        } else {
+            return this._noodleOutDir;
+        }
     }
     set noodleOutDir(dir: Direction | undefined) {
         this._noodleOutDir = dir;
         this.update();
+    }
+
+    get tilePos(): Vector {
+        return new Vector(
+            Math.floor(this.x / this.width),
+            Math.floor(this.y / this.height)
+        );
     }
 }
 
@@ -216,6 +261,29 @@ export default class Map extends TileMap {
 
         this.oldNoodleTile = tilePos;
         return true;
+    }
+
+    getNextNoodle(current: MapCell): MapCell[] {
+        const result: MapCell[] = [];
+
+        const checkAndAddCell = (dir?: Direction) => {
+            if(dir != undefined) {
+                const offset = OFFSET_BY_DIR[dir];
+                const pos = current.tilePos.add(offset);
+                const next = this.getCell(pos.x, pos.y);
+
+                if(next.hasNoodle && current.isNoodleConnected(next)) {
+                    result.push(next);
+                }
+            }
+        };
+
+        if(current.noodleInDir != undefined) {
+            checkAndAddCell(opposite(current.noodleInDir));
+        }
+        checkAndAddCell(current.noodleOutDir);
+
+        return result;
     }
 
     getCell(x: number, y: number): MapCell {
