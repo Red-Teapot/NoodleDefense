@@ -61,7 +61,7 @@ function manhattanDistance(a: Vector, b: Vector): number {
     return Math.abs(a.x - b.x) + Math.abs(a.y - b.y);
 }
 
-class MapCell extends Cell {
+export class MapCell extends Cell {
     private _noodleInDir?: Direction;
     private _noodleOutDir?: Direction;
 
@@ -76,7 +76,9 @@ class MapCell extends Cell {
     }
 
     update() {
-        if(this._noodleInDir != undefined && this._noodleOutDir != undefined) {
+        if(this._noodleInDir == undefined && this._noodleOutDir == undefined) {
+            this.sprites[2].spriteId = -1;
+        } else if(this._noodleInDir != undefined && this._noodleOutDir != undefined) {
             this.sprites[2].spriteId = NOODLE_SPRITE_BY_DIRS[this._noodleInDir][this._noodleOutDir];
         } else {
             var dir = this._noodleInDir;
@@ -90,6 +92,12 @@ class MapCell extends Cell {
                 this.sprites[2].spriteId = NoodleSpriteIDs.Horizontal;
             }
         }
+    }
+
+    clearNoodle() {
+        this._noodleInDir = undefined;
+        this._noodleOutDir = undefined;
+        this.update();
     }
 
     get hasNoodle(): boolean {
@@ -116,14 +124,17 @@ class MapCell extends Cell {
 export default class Map extends TileMap {
     private oldNoodleTile?: Vector;
 
+    readonly center: Vector;
+    readonly size: Vector;
+
     constructor() {
         const data: MapCell[] = [];
 
-        for(var x = 0; x < 100; ++x) {
-            for(var y = 0; y < 100; ++y) {
+        for(var y = 0; y < 100; ++y) {
+            for(var x = 0; x < 100; ++x) {
                 data.push(new MapCell({
-                    x: x,
-                    y: y,
+                    x: x * 24,
+                    y: y * 24,
                     width: 24,
                     height: 24,
                     index: y * 100 + x
@@ -140,6 +151,12 @@ export default class Map extends TileMap {
             rows: 100,
             data: data,
         });
+
+        this.size = new Vector(
+            this.cols * this.cellWidth,
+            this.rows * this.cellHeight
+        );
+        this.center = new Vector(this.x, this.y).add(this.size.scale(0.5));
     }
 
     placeNoodle(worldPos: Vector, vel?: Vector): boolean {
@@ -201,18 +218,19 @@ export default class Map extends TileMap {
         return true;
     }
 
+    getCell(x: number, y: number): MapCell {
+        return super.getCell(x, y) as MapCell;
+    }
+
+    getCellByIndex(idx: number): MapCell {
+        return super.getCellByIndex(idx) as MapCell;
+    }
+
+    getCellByPoint(x: number, y: number): MapCell {
+        return super.getCellByPoint(x, y) as MapCell;
+    }
+
     getCellByVecTilePos(tilePos: Vector): MapCell {
         return this.getCell(tilePos.x, tilePos.y) as MapCell;
-    }
-
-    get center(): Vector {
-        return this.size.scale(0.5);
-    }
-
-    get size(): Vector {
-        return new Vector(
-            this.cols * this.cellWidth,
-            this.rows * this.cellHeight
-        );
     }
 }

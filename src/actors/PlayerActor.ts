@@ -1,7 +1,7 @@
 import { Actor, Engine, Input, Vector } from "excalibur";
 import Map from "../world/Map";
 
-const SPEED = 24 * 7;
+const SPEED = 170;
 
 export default class PlayerActor extends Actor {
     private readonly map: Map;
@@ -13,7 +13,7 @@ export default class PlayerActor extends Actor {
         this.map = map;
     }
 
-    update(engine: Engine, delta: number) {
+    onPreUpdate(engine: Engine) {
         this.vel.setTo(0, 0);
 
         if(engine.input.keyboard.isHeld(Input.Keys.W)) {
@@ -38,7 +38,5 @@ export default class PlayerActor extends Actor {
 
             this.lastNoodleVel = this.vel;
         }
-
-        super.update(engine, delta);
     }
 }
