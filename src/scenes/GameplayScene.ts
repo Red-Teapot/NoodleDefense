@@ -28,15 +28,15 @@ export default class GameplayScene extends Scene {
     }
 
     onLoaded() {
-        this.map.tilemap.registerSpriteSheet('ground', this.groundSheet);
-        this.map.tilemap.registerSpriteSheet('traps', this.trapsSheet);
-        this.map.tilemap.registerSpriteSheet('noodle', this.noodleSheet);
+        this.map.registerSpriteSheet('ground', this.groundSheet);
+        this.map.registerSpriteSheet('traps', this.trapsSheet);
+        this.map.registerSpriteSheet('noodle', this.noodleSheet);
         
-        this.addTileMap(this.map.tilemap);
+        this.addTileMap(this.map);
 
         const mapCenter = this.map.center;
 
-        this.camera.pos = mapCenter;
+        this.camera.pos = mapCenter.clone();
         this.camera.pos.y -= 100;
         this.camera.zoom(2);
         this.camera.strategy.elasticToActor(this.player, 0.07, 0.001);

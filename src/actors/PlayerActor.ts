@@ -5,6 +5,7 @@ const SPEED = 24 * 7;
 
 export default class PlayerActor extends Actor {
     private readonly map: Map;
+    private lastNoodleVel?: Vector;
 
     constructor(map: Map) {
         super(0, 0, 24, 24);
@@ -33,7 +34,9 @@ export default class PlayerActor extends Actor {
         }
 
         if(engine.input.keyboard.isHeld(Input.Keys.Space)) {
-            this.map.placeNoodle(this.pos, this.vel);
+            this.map.placeNoodle(this.pos, this.vel ? this.vel : this.lastNoodleVel);
+
+            this.lastNoodleVel = this.vel;
         }
 
         super.update(engine, delta);

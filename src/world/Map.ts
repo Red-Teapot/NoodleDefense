@@ -1,4 +1,4 @@
-import { TileMap, TileSprite, Random, Vector } from "excalibur";
+import { TileMap, Loadable, Cell, CellArgs, Random, TileSprite, Vector } from "excalibur";
 import WeighedRandom from "../utils/WeighedRandom";
 
 const GROUND_W = new WeighedRandom<number>();
@@ -6,70 +6,203 @@ GROUND_W.add(0, 100);
 GROUND_W.add(1, 3);
 GROUND_W.add(2, 1);
 
+const groundRnd = new Random();
+
+enum Direction {
+    Up,
+    Down,
+    Left,
+    Right,
+}
+enum NoodleSpriteIDs {
+    Horizontal = 0,
+    Vertical = 1,
+    LeftDown = 2,
+    LeftUp = 3,
+    RightUp = 4,
+    RightDown = 5,
+}
+
+const DIR_BY_ANGLE = [
+    Direction.Up,
+    Direction.Right,
+    Direction.Down,
+    Direction.Left,
+];
+
+const NOODLE_SPRITE_BY_DIRS = {
+    [Direction.Up]: {
+        [Direction.Up]: NoodleSpriteIDs.Vertical,
+        [Direction.Down]: NoodleSpriteIDs.Vertical,
+        [Direction.Left]: NoodleSpriteIDs.LeftDown,
+        [Direction.Right]: NoodleSpriteIDs.RightDown,
+    },
+    [Direction.Down]: {
+        [Direction.Up]: NoodleSpriteIDs.Vertical,
+        [Direction.Down]: NoodleSpriteIDs.Vertical,
+        [Direction.Left]: NoodleSpriteIDs.LeftUp,
+        [Direction.Right]: NoodleSpriteIDs.RightUp,
+    },
+    [Direction.Left]: {
+        [Direction.Up]: NoodleSpriteIDs.RightUp,
+        [Direction.Down]: NoodleSpriteIDs.RightDown,
+        [Direction.Left]: NoodleSpriteIDs.Horizontal,
+        [Direction.Right]: NoodleSpriteIDs.Horizontal,
+    },
+    [Direction.Right]: {
+        [Direction.Up]: NoodleSpriteIDs.LeftUp,
+        [Direction.Down]: NoodleSpriteIDs.LeftDown,
+        [Direction.Left]: NoodleSpriteIDs.Horizontal,
+        [Direction.Right]: NoodleSpriteIDs.Horizontal,
+    },
+};
+
 function manhattanDistance(a: Vector, b: Vector): number {
     return Math.abs(a.x - b.x) + Math.abs(a.y - b.y);
 }
 
-export default class Map {
-    readonly tilemap = new TileMap(0, 0, 24, 24, 100, 100);
+class MapCell extends Cell {
+    private _noodleInDir?: Direction;
+    private _noodleOutDir?: Direction;
 
-    private oldTilePos?: Vector = undefined;
+    constructor(args: CellArgs) {
+        super(args);
+
+        this.sprites = [
+            new TileSprite('ground', GROUND_W.randomize(groundRnd)),
+            new TileSprite('traps', -1),
+            new TileSprite('noodle', -1),
+        ];
+    }
+
+    update() {
+        if(this._noodleInDir != undefined && this._noodleOutDir != undefined) {
+            this.sprites[2].spriteId = NOODLE_SPRITE_BY_DIRS[this._noodleInDir][this._noodleOutDir];
+        } else {
+            var dir = this._noodleInDir;
+            if(dir == undefined) {
+                dir = this._noodleOutDir;
+            }
+
+            if(dir == Direction.Up || dir == Direction.Down) {
+                this.sprites[2].spriteId = NoodleSpriteIDs.Vertical;
+            } else {
+                this.sprites[2].spriteId = NoodleSpriteIDs.Horizontal;
+            }
+        }
+    }
+
+    get hasNoodle(): boolean {
+        return this._noodleInDir != undefined || this._noodleOutDir != undefined;
+    }
+
+    get noodleInDir(): Direction | undefined {
+        return this._noodleInDir;
+    }
+    set noodleInDir(dir: Direction | undefined) {
+        this._noodleInDir = dir;
+        this.update();
+    }
+
+    get noodleOutDir(): Direction | undefined {
+        return this._noodleOutDir;
+    }
+    set noodleOutDir(dir: Direction | undefined) {
+        this._noodleOutDir = dir;
+        this.update();
+    }
+}
+
+export default class Map extends TileMap {
+    private oldNoodleTile?: Vector;
 
     constructor() {
-        const groundRnd = new Random();
+        const data: MapCell[] = [];
 
-        for(var i = 0; i < this.tilemap.data.length; ++i) {
-            const cell = this.tilemap.getCellByIndex(i);
-
-            cell.sprites = [
-                new TileSprite('ground', GROUND_W.randomize(groundRnd)),
-                new TileSprite('traps', -1),
-                new TileSprite('noodle', -1),
-            ];
+        for(var x = 0; x < 100; ++x) {
+            for(var y = 0; y < 100; ++y) {
+                data.push(new MapCell({
+                    x: x,
+                    y: y,
+                    width: 24,
+                    height: 24,
+                    index: y * 100 + x
+                }));
+            }
         }
+
+        super({
+            x: 0,
+            y: 0,
+            cellWidth: 24,
+            cellHeight: 24,
+            cols: 100,
+            rows: 100,
+            data: data,
+        });
     }
 
-    placeNoodle(pos: Vector, vel?: Vector) {
+    placeNoodle(worldPos: Vector, vel?: Vector): boolean {
         const tilePos = new Vector(
-            Math.floor(pos.x / this.tilemap.cellWidth),
-            Math.floor(pos.y / this.tilemap.cellHeight)
+            Math.floor(worldPos.x / this.cellWidth),
+            Math.floor(worldPos.y / this.cellHeight)
         );
-        const curCell = this.tilemap.getCell(tilePos.x, tilePos.y);
+        const curCell = this.getCellByVecTilePos(tilePos);
 
-        // Already have a noodle here
-        if(curCell.sprites[2].spriteId != -1) {
-            return;
+        if(curCell.hasNoodle) {
+            return false;
         }
 
-        // No old tile known, guess the direction
-        if(this.oldTilePos == undefined) {
-            curCell.sprites[2].spriteId = this.guessNoodleSprite(pos, vel);
-            this.oldTilePos = tilePos;
-            return;
+        if(vel == undefined) {
+            curCell.noodleInDir = Direction.Right;
+        } else {
+            const angle = Math.floor((vel.toAngle() + Math.PI / 4) * 2 / Math.PI) + 1;
+            curCell.noodleInDir = DIR_BY_ANGLE[angle];
         }
 
-        const mDist = manhattanDistance(tilePos, this.oldTilePos);
+        if(this.oldNoodleTile != undefined) {
+            const mDist = manhattanDistance(tilePos, this.oldNoodleTile);
+            const diagonal = mDist == 2 && tilePos.x != this.oldNoodleTile.x && tilePos.y != this.oldNoodleTile.y;
+            const adjacent = mDist == 1;
 
-        // Not connected at all, guess again
-        if(mDist > 2) {
-            curCell.sprites[2].spriteId = this.guessNoodleSprite(pos, vel);
-            this.oldTilePos = tilePos;
-            return;
+            if(diagonal) {
+                this.placeNoodle(new Vector(
+                    tilePos.x * this.cellWidth + 2,
+                    this.oldNoodleTile.y * this.cellHeight + 2), tilePos.sub(this.oldNoodleTile))
+                || this.placeNoodle(new Vector(
+                    this.oldNoodleTile.x * this.cellWidth + 2,
+                    tilePos.y * this.cellHeight + 2), tilePos.sub(this.oldNoodleTile));
+            }
+
+            if(diagonal || adjacent) {
+                const delta = tilePos.sub(this.oldNoodleTile);
+                const oldCell = this.getCellByVecTilePos(this.oldNoodleTile);
+
+                if(delta.x == 1) {
+                    oldCell.noodleOutDir = Direction.Right;
+                    curCell.noodleInDir = Direction.Right;
+                } else if(delta.x == -1) {
+                    oldCell.noodleOutDir = Direction.Left;
+                    curCell.noodleInDir = Direction.Left;
+                } else if(delta.y == 1) {
+                    oldCell.noodleOutDir = Direction.Down;
+                    curCell.noodleInDir = Direction.Down;
+                } else if(delta.y == -1) {
+                    oldCell.noodleOutDir = Direction.Up;
+                    curCell.noodleInDir = Direction.Up;
+                } else {
+                    console.log('Wrong delta:', delta);
+                    throw 'This should never happen';
+                }
+            }
         }
 
-        // TODO Connect it
-
-        this.oldTilePos = tilePos;
+        this.oldNoodleTile = tilePos;
+        return true;
     }
 
-    private guessNoodleSprite(pos: Vector, vel?: Vector): number {
-        var id = 0;
-
-        if(vel && Math.abs(vel.x) < Math.abs(vel.y)) {
-            id = 1;
-        }
-
-        return id;
+    getCellByVecTilePos(tilePos: Vector): MapCell {
+        return this.getCell(tilePos.x, tilePos.y) as MapCell;
     }
 
     get center(): Vector {
@@ -78,8 +211,8 @@ export default class Map {
 
     get size(): Vector {
         return new Vector(
-            this.tilemap.cols * this.tilemap.cellWidth,
-            this.tilemap.rows * this.tilemap.cellHeight
+            this.cols * this.cellWidth,
+            this.rows * this.cellHeight
         );
     }
 }
