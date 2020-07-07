@@ -1,16 +1,24 @@
 import { Actor, Engine, Input, Vector } from "excalibur";
-import Map from "../world/Map";
+import GameplayScene from "../scenes/GameplayScene";
 
 const SPEED = 170;
 
 export default class PlayerActor extends Actor {
-    private readonly map: Map;
+    private readonly gameplay: GameplayScene;
     private lastNoodleVel?: Vector;
 
-    constructor(map: Map) {
+    constructor(gameplay: GameplayScene) {
         super(0, 0, 24, 24);
 
-        this.map = map;
+        this.gameplay = gameplay;
+    }
+
+    onInitialize(engine: Engine) {
+        engine.input.keyboard.on('press', (evt) => {
+            if(evt.key == Input.Keys.E) {
+                this.gameplay.map.placeTrap(this.pos, 0);
+            }
+        });
     }
 
     onPreUpdate(engine: Engine) {
@@ -34,7 +42,7 @@ export default class PlayerActor extends Actor {
         }
 
         if(engine.input.keyboard.isHeld(Input.Keys.Space)) {
-            this.map.placeNoodle(this.pos, this.vel ? this.vel : this.lastNoodleVel);
+            this.gameplay.map.placeNoodle(this.pos, this.vel ? this.vel : this.lastNoodleVel);
 
             this.lastNoodleVel = this.vel;
         }

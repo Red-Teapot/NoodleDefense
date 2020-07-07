@@ -130,8 +130,20 @@ export class MapCell extends Cell {
                 || this.noodleOutDir == opposite(that.noodleOutDir!));
     }
 
+    placeTrap(tier: number) {
+        this.sprites[1].spriteId = tier;
+    }
+
+    removeTrap() {
+        this.sprites[1].spriteId = -1;
+    }
+
     get hasNoodle(): boolean {
         return this._noodleInDir != undefined || this._noodleOutDir != undefined;
+    }
+
+    get hasTrap(): boolean {
+        return this.sprites[1].spriteId >= 0;
     }
 
     get noodleInDir(): Direction | undefined {
@@ -284,6 +296,15 @@ export default class Map extends TileMap {
         checkAndAddCell(current.noodleOutDir);
 
         return result;
+    }
+
+    placeTrap(worldPos: Vector, tier: number) {
+        const cell = this.getCellByPoint(worldPos.x, worldPos.y);
+        if(cell.hasTrap) {
+            return;
+        }
+
+        cell.placeTrap(tier);
     }
 
     getCell(x: number, y: number): MapCell {

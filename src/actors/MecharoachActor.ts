@@ -1,19 +1,22 @@
 import { Actor, Random } from "excalibur";
 import Map, { MapCell } from "../world/Map";
+import GameplayScene from "../scenes/GameplayScene";
 
 const SPEED = 30;
 
 const noodleRnd = new Random();
 
 export default class MecharoachActor extends Actor {
+    private readonly gameplay: GameplayScene;
     private readonly map: Map;
 
     private isEating = false;
 
-    constructor(map: Map) {
+    constructor(gameplay: GameplayScene) {
         super(0, 0, 24, 24);
 
-        this.map = map;
+        this.gameplay = gameplay;
+        this.map = gameplay.map;
 
         this.moveToTarget();
     }
@@ -28,6 +31,10 @@ export default class MecharoachActor extends Actor {
             this.actions.clearActions();
             this.actions.moveTo(target.x, target.y, SPEED)
                 .callMethod(() => this.eatNoodle(cell));
+        }
+
+        if(cell.hasTrap && !this.isEating) {
+            this.gameplay.onRoachTrapped(this);
         }
 
         if(this.vel.x != 0 || this.vel.y != 0) {
@@ -45,6 +52,10 @@ export default class MecharoachActor extends Actor {
 
         cell.clearNoodle();
 
+        if(cell.hasTrap) {
+            this.gameplay.onRoachTrapped(this);
+        }
+
         if(next.length == 0) {
             this.isEating = false;
             this.moveToTarget();
@@ -60,9 +71,7 @@ export default class MecharoachActor extends Actor {
     moveToTarget() {
         this.actions.moveTo(this.map.center.x, this.map.center.y, SPEED)
             .callMethod(() => {
-                // TODO Shake camera, decrease HP, etc.
-                console.log('TARGET REACHED');
-            })
-            .die();
+                this.gameplay.onRoachReachedTarget(this)
+            });
     }
 }

@@ -1,4 +1,4 @@
-import { Scene, Texture, SpriteSheet, Engine, Loader } from "excalibur";
+import { Scene, Texture, SpriteSheet, Engine, Loader, Animation } from "excalibur";
 import PlayerActor from "../actors/PlayerActor";
 import Map from "../world/Map";
 import MecharoachActor from "../actors/MecharoachActor";
@@ -14,8 +14,11 @@ export default class GameplayScene extends Scene {
     private readonly trapsSheet = new SpriteSheet(this.trapsTex, 5, 5, 24, 24);
     private readonly noodleSheet = new SpriteSheet(this.noodleTex, 5, 5, 24, 24);
 
-    private readonly map = new Map();
-    private readonly player = new PlayerActor(this.map);
+    private readonly mecharoachSheet = new SpriteSheet(this.mecharoachTex, 2, 1, 32, 32);
+    private mecharoachAnim?: Animation;
+
+    readonly map = new Map();
+    private readonly player = new PlayerActor(this);
 
     onInitialize(engine: Engine) {
         const loader = new Loader([
@@ -31,6 +34,8 @@ export default class GameplayScene extends Scene {
     }
 
     onLoaded(engine: Engine) {
+        this.mecharoachAnim = this.mecharoachSheet.getAnimationForAll(engine, 100);
+
         this.map.registerSpriteSheet('ground', this.groundSheet);
         this.map.registerSpriteSheet('traps', this.trapsSheet);
         this.map.registerSpriteSheet('noodle', this.noodleSheet);
@@ -54,10 +59,20 @@ export default class GameplayScene extends Scene {
         });
     }
 
+    onRoachReachedTarget(roach: MecharoachActor) {
+        roach.kill();
+        this.camera.shake(10, 10, 150);
+        // TODO HP calc, etc.
+    }
+
+    onRoachTrapped(roach: MecharoachActor) {
+        roach.kill();
+    }
+
     spawnMecharoach(x: number, y: number) {
-        const roach = new MecharoachActor(this.map);
+        const roach = new MecharoachActor(this);
         roach.pos.setTo(x, y);
-        roach.addDrawing(this.mecharoachTex);
+        roach.addDrawing('walk', this.mecharoachAnim!);
         this.add(roach);
         roach.setZIndex(50);
     }
