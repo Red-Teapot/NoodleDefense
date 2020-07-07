@@ -26,15 +26,19 @@ export default class PlayerActor extends Actor {
 
         if(engine.input.keyboard.isHeld(Input.Keys.W)) {
             this.vel.y -= 1;
+            this.setDrawing('walk_up');
         }
         if(engine.input.keyboard.isHeld(Input.Keys.S)) {
             this.vel.y += 1;
+            this.setDrawing('walk_down');
         }
         if(engine.input.keyboard.isHeld(Input.Keys.A)) {
             this.vel.x -= 1;
+            this.setDrawing('walk_left');
         }
         if(engine.input.keyboard.isHeld(Input.Keys.D)) {
             this.vel.x += 1;
+            this.setDrawing('walk_right');
         }
         
         if(this.vel.x != 0 || this.vel.y != 0) {

@@ -5,6 +5,8 @@ const GROUND_W = new WeighedRandom<number>();
 GROUND_W.add(0, 100);
 GROUND_W.add(1, 3);
 GROUND_W.add(2, 1);
+GROUND_W.add(3, 5);
+GROUND_W.add(4, 2);
 
 const groundRnd = new Random();
 
