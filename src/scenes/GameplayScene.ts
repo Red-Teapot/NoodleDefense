@@ -42,8 +42,8 @@ export default class GameplayScene extends Scene {
         this.mecharoachAnim = this.mecharoachSheet.getAnimationForAll(engine, 100);
         this.playerWalkU = this.playerSheet.getAnimationByIndices(engine, [1, 5], 200);
         this.playerWalkD = this.playerSheet.getAnimationByIndices(engine, [0, 4], 200);
-        this.playerWalkL = this.playerSheet.getAnimationByIndices(engine, [2, 6], 200);
-        this.playerWalkR = this.playerSheet.getAnimationByIndices(engine, [3, 7], 200);
+        this.playerWalkL = this.playerSheet.getAnimationByIndices(engine, [3, 7], 200);
+        this.playerWalkR = this.playerSheet.getAnimationByIndices(engine, [2, 6], 200);
 
         this.map.registerSpriteSheet('ground', this.groundSheet);
         this.map.registerSpriteSheet('traps', this.trapsSheet);
