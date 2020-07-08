@@ -1,4 +1,4 @@
-import { Scene, Texture, SpriteSheet, Engine, Loader, Animation, Random, Vector } from "excalibur";
+import { Scene, Texture, SpriteSheet, Engine, Loader, Animation, Random, Vector, Actor } from "excalibur";
 import PlayerActor from "../actors/PlayerActor";
 import Map from "../world/Map";
 import MecharoachActor from "../actors/MecharoachActor";
@@ -11,6 +11,8 @@ export default class GameplayScene extends Scene {
     private readonly noodleTex = new Texture('assets/tex/noodle.png');
     private readonly playerTex = new Texture('assets/tex/player.png');
     private readonly mecharoachTex = new Texture('assets/tex/mecharoach.png');
+
+    private readonly hintsTex = new Texture('assets/tex/hints.png');
 
     private readonly groundSheet = new SpriteSheet(this.groundTex, 5, 5, 24, 24);
     private readonly trapsSheet = new SpriteSheet(this.trapsTex, 5, 5, 24, 24);
@@ -36,6 +38,7 @@ export default class GameplayScene extends Scene {
             this.noodleTex,
             this.playerTex,
             this.mecharoachTex,
+            this.hintsTex,
         ]);
         loader.logo = '';
         
@@ -52,8 +55,6 @@ export default class GameplayScene extends Scene {
         this.map.registerSpriteSheet('ground', this.groundSheet);
         this.map.registerSpriteSheet('traps', this.trapsSheet);
         this.map.registerSpriteSheet('noodle', this.noodleSheet);
-        
-        this.addTileMap(this.map);
 
         const mapCenter = this.map.center;
 
@@ -68,13 +69,23 @@ export default class GameplayScene extends Scene {
         this.player.addDrawing('walk_right', this.playerWalkR);
         this.player.setDrawing('walk_down');
         this.player.pos = mapCenter;
-        this.add(this.player);
-        this.player.setZIndex(100);
+
+        const hints = new Actor({
+            x: mapCenter.x + 30,
+            y: mapCenter.y - 30,
+        });
+        hints.addDrawing(this.hintsTex);
+        hints.actions.delay(20 * 1000).fade(0, 1000).die();
 
         engine.input.pointers.primary.on('down', (evt) => {
             // FIXME Remove this
             this.spawnMecharoach(evt.worldPos.x, evt.worldPos.y);
         });
+
+        this.addTileMap(this.map);
+        this.add(hints);
+        this.add(this.player);
+        this.player.setZIndex(100);
     }
 
     onPreUpdate(engine: Engine) {

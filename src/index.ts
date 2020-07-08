@@ -1,4 +1,4 @@
-import { Engine, DisplayMode, Physics, CollisionResolutionStrategy } from 'excalibur';
+import { DisplayMode, Engine } from 'excalibur';
 import GameplayScene from './scenes/GameplayScene';
 
 const engine = new Engine({
@@ -11,6 +11,5 @@ engine.setAntialiasing(false);
 
 engine.start().then(() => {
     engine.addScene('gameplay', new GameplayScene(engine));
-
     engine.goToScene('gameplay');
 });
