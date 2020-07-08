@@ -59,7 +59,7 @@ export default class GameplayScene extends Scene {
         this._coins = 4;
         this._health = 100;
         this.mecharoachSpawnChance = 0.15;
-        
+
         // Init HUD
         const hudCoinsIcon = new ScreenElement();
         hudCoinsIcon.pos.setTo(5, 5);
@@ -125,11 +125,6 @@ export default class GameplayScene extends Scene {
         });
         hints.addDrawing(this.hintsTex);
         hints.actions.delay(20 * 1000).fade(0, 1000).die();
-
-        engine.input.pointers.primary.on('down', (evt) => {
-            // FIXME Remove this
-            this.spawnMecharoach(evt.worldPos.x, evt.worldPos.y);
-        });
 
         this.addTileMap(this.map);
         this.add(hints);
