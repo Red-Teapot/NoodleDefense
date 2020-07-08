@@ -36,7 +36,6 @@ export default class GameplayScene extends Scene {
     private readonly player = new PlayerActor(this);
 
     private mecharoachSpawnChance = 0.15;
-
     private _coins = 4;
     private _health = 100;
 
@@ -56,6 +55,11 @@ export default class GameplayScene extends Scene {
     }
 
     onLoaded(engine: Engine) {
+        // Reset all variables
+        this._coins = 4;
+        this._health = 100;
+        this.mecharoachSpawnChance = 0.15;
+        
         // Init HUD
         const hudCoinsIcon = new ScreenElement();
         hudCoinsIcon.pos.setTo(5, 5);
