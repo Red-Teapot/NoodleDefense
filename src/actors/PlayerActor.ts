@@ -16,7 +16,7 @@ export default class PlayerActor extends Actor {
     onInitialize(engine: Engine) {
         engine.input.keyboard.on('press', (evt) => {
             if(evt.key == Input.Keys.E) {
-                this.gameplay.map.placeTrap(this.pos, 0);
+                this.gameplay.placeTrap(this.pos, 0);
             }
         });
     }

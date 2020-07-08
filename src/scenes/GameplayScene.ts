@@ -1,4 +1,4 @@
-import { Scene, Texture, SpriteSheet, Engine, Loader, Animation, Random, Vector, Actor } from "excalibur";
+import { Scene, Texture, SpriteSheet, Engine, Loader, Animation, Random, Vector, Actor, Label, ScreenElement, Color, vec } from "excalibur";
 import PlayerActor from "../actors/PlayerActor";
 import Map from "../world/Map";
 import MecharoachActor from "../actors/MecharoachActor";
@@ -9,17 +9,23 @@ export default class GameplayScene extends Scene {
     private readonly groundTex = new Texture('assets/tex/ground.png');
     private readonly trapsTex = new Texture('assets/tex/traps.png');
     private readonly noodleTex = new Texture('assets/tex/noodle.png');
-    private readonly playerTex = new Texture('assets/tex/player.png');
-    private readonly mecharoachTex = new Texture('assets/tex/mecharoach.png');
-
-    private readonly hintsTex = new Texture('assets/tex/hints.png');
-
     private readonly groundSheet = new SpriteSheet(this.groundTex, 5, 5, 24, 24);
     private readonly trapsSheet = new SpriteSheet(this.trapsTex, 5, 5, 24, 24);
     private readonly noodleSheet = new SpriteSheet(this.noodleTex, 5, 5, 24, 24);
 
+    private readonly playerTex = new Texture('assets/tex/player.png');
+    private readonly mecharoachTex = new Texture('assets/tex/mecharoach.png');
     private readonly mecharoachSheet = new SpriteSheet(this.mecharoachTex, 2, 1, 32, 32);
     private readonly playerSheet = new SpriteSheet(this.playerTex, 4, 2, 24, 24);
+
+    private readonly hintsTex = new Texture('assets/tex/hints.png');
+    private readonly hudTex = new Texture('assets/tex/hud.png');
+    private readonly hudSheet = new SpriteSheet(this.hudTex, 2, 1, 19, 19);
+    private readonly hudCoinsSprite = this.hudSheet.getSprite(0);
+    private readonly hudHealthSprite = this.hudSheet.getSprite(1);
+    private readonly hudCoinsLabel = new Label('0');
+    private readonly hudHealthLabel = new Label('100');
+
     private mecharoachAnim?: Animation;
     private playerWalkU?: Animation;
     private playerWalkD?: Animation;
@@ -31,6 +37,9 @@ export default class GameplayScene extends Scene {
 
     private mecharoachSpawnChance = 0.15;
 
+    private _coins = 4;
+    private _health = 100;
+
     onInitialize(engine: Engine) {
         const loader = new Loader([
             this.groundTex,
@@ -39,6 +48,7 @@ export default class GameplayScene extends Scene {
             this.playerTex,
             this.mecharoachTex,
             this.hintsTex,
+            this.hudTex,
         ]);
         loader.logo = '';
         
@@ -46,6 +56,41 @@ export default class GameplayScene extends Scene {
     }
 
     onLoaded(engine: Engine) {
+        // Init HUD
+        const hudCoinsIcon = new ScreenElement();
+        hudCoinsIcon.pos.setTo(5, 5);
+        hudCoinsIcon.scale.setTo(2, 2);
+        hudCoinsIcon.addDrawing(this.hudCoinsSprite);
+
+        this.hudCoinsLabel.text = this.coins.toString();
+        this.hudCoinsLabel.pos.setTo(45, 39);
+        this.hudCoinsLabel.fontSize = 28;
+        this.hudCoinsLabel.color = Color.White;
+
+        const hudHealthIcon = new ScreenElement();
+        hudHealthIcon.pos.setTo(100, 5);
+        hudHealthIcon.scale.setTo(2, 2);
+        hudHealthIcon.addDrawing(this.hudHealthSprite);
+
+        this.hudHealthLabel.text = Math.floor(this.health).toString();
+        this.hudHealthLabel.pos.setTo(144, 39);
+        this.hudHealthLabel.fontSize = 28;
+        this.hudHealthLabel.color = Color.White;
+
+        const hudBg = new ScreenElement();
+        hudBg.pos.setTo(0, 0);
+        hudBg.width = 200;
+        hudBg.height = 46;
+        hudBg.color = Color.Black;
+        hudBg.opacity = 0.3;
+
+        this.addScreenElement(hudBg);
+        this.addScreenElement(hudCoinsIcon);
+        this.addScreenElement(this.hudCoinsLabel);
+        this.addScreenElement(hudHealthIcon);
+        this.addScreenElement(this.hudHealthLabel);
+
+        // Init actors
         this.mecharoachAnim = this.mecharoachSheet.getAnimationForAll(engine, 100);
         this.playerWalkU = this.playerSheet.getAnimationByIndices(engine, [1, 5], 200);
         this.playerWalkD = this.playerSheet.getAnimationByIndices(engine, [0, 4], 200);
@@ -96,18 +141,35 @@ export default class GameplayScene extends Scene {
             const pos = new Vector(distance, 0).rotate(angle).add(this.map.center);
             
             this.spawnMecharoach(pos.x, pos.y);
-            console.log('Mecharoach spawned');
+        }
+
+        if(this.health <= 0) {
+            engine.goToScene('gameover');
         }
     }
 
     onRoachReachedTarget(roach: MecharoachActor) {
         roach.kill();
         this.camera.shake(10, 10, 150);
-        // TODO HP calc, etc.
+        this.health -= 5;
     }
 
     onRoachTrapped(roach: MecharoachActor) {
         roach.kill();
+
+        if(mecharoachRnd.bool(0.05)) {
+            this.coins++;
+        }
+    }
+
+    placeTrap(worldPos: Vector, tier: number) {
+        if(this.coins <= 0) {
+            return;
+        }
+
+        this.coins--;
+
+        this.map.placeTrap(worldPos, tier);
     }
 
     spawnMecharoach(x: number, y: number) {
@@ -120,5 +182,21 @@ export default class GameplayScene extends Scene {
         if(this.mecharoachSpawnChance < 0.4) {
             this.mecharoachSpawnChance += 0.001;
         }
+    }
+
+    get coins(): number {
+        return this._coins;
+    }
+    set coins(c: number) {
+        this._coins = c;
+        this.hudCoinsLabel.text = c.toString();
+    }
+
+    get health(): number {
+        return this._health;
+    }
+    set health(h: number) {
+        this._health = h;
+        this.hudHealthLabel.text = Math.floor(h).toString();
     }
 }
