@@ -1,7 +1,9 @@
-import { Scene, Texture, SpriteSheet, Engine, Loader, Animation } from "excalibur";
+import { Scene, Texture, SpriteSheet, Engine, Loader, Animation, Random, Vector } from "excalibur";
 import PlayerActor from "../actors/PlayerActor";
 import Map from "../world/Map";
 import MecharoachActor from "../actors/MecharoachActor";
+
+const mecharoachRnd = new Random();
 
 export default class GameplayScene extends Scene {
     private readonly groundTex = new Texture('assets/tex/ground.png');
@@ -24,6 +26,8 @@ export default class GameplayScene extends Scene {
 
     readonly map = new Map();
     private readonly player = new PlayerActor(this);
+
+    private mecharoachSpawnChance = 0.15;
 
     onInitialize(engine: Engine) {
         const loader = new Loader([
@@ -68,8 +72,21 @@ export default class GameplayScene extends Scene {
         this.player.setZIndex(100);
 
         engine.input.pointers.primary.on('down', (evt) => {
+            // FIXME Remove this
             this.spawnMecharoach(evt.worldPos.x, evt.worldPos.y);
         });
+    }
+
+    onPreUpdate(engine: Engine) {
+        // Spawn mecharoach
+        if(mecharoachRnd.floating(0, 100) < this.mecharoachSpawnChance) {
+            const angle = mecharoachRnd.floating(0, 2 * Math.PI);
+            const distance = mecharoachRnd.floating(400, 1000);
+            const pos = new Vector(distance, 0).rotate(angle).add(this.map.center);
+            
+            this.spawnMecharoach(pos.x, pos.y);
+            console.log('Mecharoach spawned');
+        }
     }
 
     onRoachReachedTarget(roach: MecharoachActor) {
@@ -88,5 +105,9 @@ export default class GameplayScene extends Scene {
         roach.addDrawing('walk', this.mecharoachAnim!);
         this.add(roach);
         roach.setZIndex(50);
+
+        if(this.mecharoachSpawnChance < 0.4) {
+            this.mecharoachSpawnChance += 0.001;
+        }
     }
 }
