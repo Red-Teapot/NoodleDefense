@@ -19,6 +19,7 @@ export default class GameplayScene extends Scene {
     private readonly playerSheet = new SpriteSheet(this.playerTex, 4, 2, 24, 24);
 
     private readonly hintsTex = new Texture('assets/tex/hints.png');
+    private readonly targetTex = new Texture('assets/tex/target.png');
     private readonly hudTex = new Texture('assets/tex/hud.png');
     private readonly hudSheet = new SpriteSheet(this.hudTex, 2, 1, 19, 19);
     private readonly hudCoinsSprite = this.hudSheet.getSprite(0);
@@ -47,6 +48,7 @@ export default class GameplayScene extends Scene {
             this.playerTex,
             this.mecharoachTex,
             this.hintsTex,
+            this.targetTex,
             this.hudTex,
         ]);
         loader.logo = '';
@@ -121,12 +123,19 @@ export default class GameplayScene extends Scene {
 
         const hints = new Actor({
             x: mapCenter.x + 30,
-            y: mapCenter.y - 30,
+            y: mapCenter.y - 50,
         });
         hints.addDrawing(this.hintsTex);
         hints.actions.delay(20 * 1000).fade(0, 1000).die();
 
+        const target = new Actor({
+            x: mapCenter.x,
+            y: mapCenter.y - 7,
+        });
+        target.addDrawing(this.targetTex);
+
         this.addTileMap(this.map);
+        this.add(target);
         this.add(hints);
         this.add(this.player);
         this.player.setZIndex(100);
